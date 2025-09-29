@@ -1,0 +1,191 @@
+name: Renew Microservice TLS Certificates
+
+on:
+  schedule:
+    - cron: "00 12 * * MON"
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        description: Choose the environment to check microservice certificate
+        options:
+          - Production
+          - Test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ZEROSSL_API_KEY: ${{ secrets.ZEROSSL_API_KEY }}
+  ZEROSSL_EMAIL: ${{ vars.ZEROSSL_EMAIL }}
+  NOTIFICATION_SLACK_CHANNEL_WEBHOOK: ${{ secrets.NOTIFICATION_SLACK_CHANNEL_WEBHOOK }}
+  NOTIFICATION_SLACK_CHANNEL_NAME: "dev-team-devops"
+  BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  SLACK_NOTIFIER_CONTAINER: 519527725796.dkr.ecr.ap-southeast-2.amazonaws.com/slack-notifier:latest
+  GITHUB_ACTION_ECR_ROLE_ARN: arn:aws:iam::519527725796:role/github-actions-ecr-role
+  LEGACY_PRODUCTION_ROLE_ARN: arn:aws:iam::519527725796:role/pipeline-tls-automation-role
+  PLENTIAU_TEST_ROLE_ARN: arn:aws:iam::939087296411:role/pipeline-tls-automation-role
+  PLENTIAU_PRODUCTION_ROLE_ARN: arn:aws:iam::338608670045:role/pipeline-tls-automation-role
+  PLENTIAU_TEST_HOSTED_ZONE_ID: Z0729871RY2BG34RISU7
+  PLENTIAU_PRODUCTION_HOSTED_ZONE_ID: Z09985722XYKWP0YZWW2I
+
+defaults:
+  run:
+    working-directory: "Microservice TLS Certificates"
+
+jobs:
+  check-certificate-status:
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master'
+    name: Check Certificate Status
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+    outputs:
+      expired_certificates_test: ${{ steps.alert.outputs.expired_certificates_test }}
+      expired_certificates_production: ${{ steps.alert.outputs.expired_certificates_production }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - uses: aws-actions/configure-aws-credentials@v3
+        name: Config AWS credential
+        with:
+          role-to-assume: ${{ env.LEGACY_PRODUCTION_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - name: Check certificate
+        run: python get_zerossl_certificate.py
+
+      - uses: aws-actions/configure-aws-credentials@v3
+        name: Config AWS credential
+        with:
+          role-to-assume: ${{ env.GITHUB_ACTION_ECR_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: 519527725796
+
+      - name: Alert for expired certificates
+        id: alert
+        run: python send_alert.py
+
+      - name: Upload expired certificates artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: expired-certificates
+          path: "Microservice TLS Certificates/expired_certificates"
+
+  renew-expired-test-certificate:
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master' && needs.check-certificate-status.outputs.expired_certificates_test == 'true'
+    name: Renew Expired Certificates on Test
+    environment: plentiau-test
+    needs: [check-certificate-status]
+    env:
+      ENVIRONMENT: Test
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download expired certificates artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: expired-certificates
+          path: "Microservice TLS Certificates/expired_certificates"
+
+      - uses: aws-actions/configure-aws-credentials@v3
+        name: Config AWS credential for plentiau-test
+        with:
+          role-to-assume: ${{ env.PLENTIAU_TEST_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - name: Renew Certificates
+        id: renew-certificates
+        run: python renew_zerossl_certificate.py
+
+      - uses: aws-actions/configure-aws-credentials@v3
+        name: Config AWS credential for legacy-production
+        with:
+          role-to-assume: ${{ env.LEGACY_PRODUCTION_ROLE_ARN }}
+          aws-region: ap-southeast-2
+          role-duration-seconds: 21600 # 6 hours
+
+      - name: Install Certificates
+        id: install-certificates
+        run: python install_certificate.py
+
+  renew-expired-production-certificate:
+    name: Renew Expired Certificates on Production
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'master' && needs.check-certificate-status.outputs.expired_certificates_production == 'true' && ( needs.renew-expired-test-certificate.result == 'skipped' || needs.renew-expired-test-certificate.result == 'success' )
+    environment: plentiau-production
+    needs: [renew-expired-test-certificate]
+    env:
+      ENVIRONMENT: Production
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download expired certificates artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: expired-certificates
+          path: "Microservice TLS Certificates/expired_certificates"
+
+      - uses: aws-actions/configure-aws-credentials@v3
+        name: Config AWS credential for plentiau-production
+        with:
+          role-to-assume: ${{ env.PLENTIAU_PRODUCTION_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - name: Renew Certificates
+        id: renew-certificates
+        run: python renew_zerossl_certificate.py
+
+      - uses: aws-actions/configure-aws-credentials@v3
+        name: Config AWS credential for legacy-production
+        with:
+          role-to-assume: ${{ env.LEGACY_PRODUCTION_ROLE_ARN }}
+          aws-region: ap-southeast-2
+          role-duration-seconds: 21600 # 6 hours
+
+      - name: Install Certificates
+        id: install-certificates
+        run: python install_certificate.py

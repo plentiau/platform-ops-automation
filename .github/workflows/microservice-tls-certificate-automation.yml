@@ -49,7 +49,7 @@ jobs:
       expired_certificates_test: ${{ steps.alert.outputs.expired_certificates_test }}
       expired_certificates_production: ${{ steps.alert.outputs.expired_certificates_production }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -101,7 +101,7 @@ jobs:
     env:
       ENVIRONMENT: Test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -141,6 +141,7 @@ jobs:
         id: install-certificates
         run: python install_certificate.py
 
+        
   renew-expired-production-certificate:
     name: Renew Expired Certificates on Production
     runs-on: ubuntu-latest
@@ -150,7 +151,7 @@ jobs:
     env:
       ENVIRONMENT: Production
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5

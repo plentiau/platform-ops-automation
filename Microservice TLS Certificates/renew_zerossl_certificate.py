@@ -73,63 +73,6 @@ def create_csr(common_name: str, email: str):
     return csr_body, private_key_pem
 
 
-def update_route53(env_name: str, json_response: dict):
-    """
-    Add CNAME validation records to Route 53 for the given environment.
-
-    Args:
-        env_name (str): Must be "Test" or "Production"
-        json_response (dict): ZeroSSL certificate creation response JSON
-    """
-    route53 = boto3.client("route53")
-
-    # Hosted zone IDs must be set in environment
-    if env_name == "Test":
-        hosted_zone_id = os.getenv("PLENTIAU_TEST_HOSTED_ZONE_ID")
-    elif env_name == "Production":
-        hosted_zone_id = os.getenv("PLENTIAU_PRODUCTION_HOSTED_ZONE_ID")
-    else:
-        raise ValueError("env_name must be 'Test' or 'Production'")
-
-    if not hosted_zone_id:
-        raise RuntimeError(f"Hosted zone ID not set for {env_name}")
-
-    other_methods = json_response.get("validation", {}).get("other_methods", {})
-    if not other_methods:
-        logger.warning("No 'other_methods' validation found in response.")
-        return False
-
-    changes = []
-    for domain, validation in other_methods.items():
-        cname_name = validation.get("cname_validation_p1")
-        cname_value = validation.get("cname_validation_p2")
-
-        if cname_name and cname_value:
-            logger.info("Adding CNAME validation for %s -> %s", cname_name, cname_value)
-            changes.append({
-                "Action": "UPSERT",
-                "ResourceRecordSet": {
-                    "Name": cname_name,
-                    "Type": "CNAME",
-                    "TTL": 300,
-                    "ResourceRecords": [{"Value": cname_value}],
-                },
-            })
-
-    if not changes:
-        logger.warning("No CNAME validation entries found in ZeroSSL response.")
-        return False
-
-    # Apply changes
-    route53.change_resource_record_sets(
-        HostedZoneId=hosted_zone_id,
-        ChangeBatch={"Changes": changes},
-    )
-
-    logger.info("CNAME records successfully added to Route53 zone %s", hosted_zone_id)
-    return True
-
-
 def request_certificate(certificate_domain: str, certificate_csr: str, retries: int = 3, sleep_seconds: int = 5):
     """
     Request a ZeroSSL certificate for the given domain, retrying on failure.
@@ -530,13 +473,13 @@ def main():
                                 logging.warning("❌ Failed to clean old CNAME records!")
 
                             logger.info("Exporting certificate ID and private key...")
-                            parrent_folder = f"{issued_env_folder}/{certificate_domain}"
-                            os.makedirs(parrent_folder, exist_ok=True)
+                            parent_folder = f"{issued_env_folder}/{certificate_domain}"
+                            os.makedirs(parent_folder, exist_ok=True)
                             # Write ID
-                            with open(os.path.join(parrent_folder, "id"), "a") as f:
+                            with open(os.path.join(parent_folder, "id"), "a") as f:
                                 f.write(f"{certificate_id}\n")
                             # Write private key
-                            with open(os.path.join(parrent_folder, "private.key"), "a") as f:
+                            with open(os.path.join(parent_folder, "private.key"), "a") as f:
                                 f.write(f"{private_key}\n")
     else:
         logger.info("No certificate file found for %s environment.", environment)

@@ -2,8 +2,10 @@ import os
 import json
 import requests
 import logging
-from datetime import datetime, timezone
 import boto3
+import time
+
+from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
 # Setup logging
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 ZEROSSL_URL = "https://api.zerossl.com"
 CERTIFICATE_VALIDITY_FILE = "certificate_validity"
-REMAINING_DAY_THRESHOLD = 7
+REMAINING_DAY_THRESHOLD = 14
 
 
 def get_certificate_detail(certificate_id: str, retries: int = 3, sleep_seconds: int = 5):

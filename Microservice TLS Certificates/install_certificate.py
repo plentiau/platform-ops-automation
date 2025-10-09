@@ -23,15 +23,6 @@ logger = logging.getLogger(__name__)
 
 ZEROSSL_URL = "https://api.zerossl.com"
 
-
-import os
-import time
-import requests
-import logging
-
-logger = logging.getLogger(__name__)
-ZEROSSL_URL = "https://api.zerossl.com"  # adjust if needed
-
 def download_certificate(certificate_id: str, retries: int = 3, sleep_seconds: int = 5):
     """
     Download certificate from ZeroSSL (inline return), retrying on failure.
@@ -293,7 +284,7 @@ def main():
 
         # Check if instance refresh failed
         if not refresh_result:
-            logger.error("❌ Failed to start instance fresh for %s", asg)
+            logger.error("❌ Failed to start instance refresh for %s", asg)
             failed_instance_refresh_asg.append(asg)
         else:
             logger.info("✅ Successfully refreshed ASG!")

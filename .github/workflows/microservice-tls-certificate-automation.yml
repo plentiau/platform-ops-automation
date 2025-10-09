@@ -69,24 +69,40 @@ jobs:
           aws-region: ap-southeast-2
 
       - name: Check certificate
+        id: check-certificates
+        continue-on-error: true
         run: python get_zerossl_certificate.py
+
+      - name: Notify Slack if failed
+        if: steps.check-certificates.outcome == 'failure'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Failed to check certificates!"
+          slack-optional-icon_emoji: ":siren-light:"
+          slack-optional-username: "Platform Ops Automation"
 
       - uses: aws-actions/configure-aws-credentials@v3
         name: Config AWS credential
+        if: steps.check-certificates.outcome == 'success'
         with:
           role-to-assume: ${{ env.GITHUB_ACTION_ECR_ROLE_ARN }}
           aws-region: ap-southeast-2
 
       - name: Login to Amazon ECR
+        if: steps.check-certificates.outcome == 'success'
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registries: 519527725796
 
       - name: Alert for expired certificates
         id: alert
+        if: steps.check-certificates.outcome == 'success'
         run: python send_alert.py
 
       - name: Upload expired certificates artifact
+        if: steps.check-certificates.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: expired-certificates
@@ -128,9 +144,21 @@ jobs:
 
       - name: Renew Certificates
         id: renew-certificates
+        continue-on-error: true
         run: python renew_zerossl_certificate.py
 
+      - name: Notify Slack if failed
+        if: steps.renew-certificates.outcome == 'failure'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Failed to renew certificate for Test!"
+          slack-optional-icon_emoji: ":siren-light:"
+          slack-optional-username: "Platform Ops Automation"
+
       - uses: aws-actions/configure-aws-credentials@v3
+        if: steps.renew-certificates.outcome == 'success'
         name: Config AWS credential for legacy-production
         with:
           role-to-assume: ${{ env.LEGACY_PRODUCTION_ROLE_ARN }}
@@ -138,10 +166,31 @@ jobs:
           role-duration-seconds: 21600 # 6 hours
 
       - name: Install Certificates
+        if: steps.renew-certificates.outcome == 'success'
         id: install-certificates
+        continue-on-error: true
         run: python install_certificate.py
 
-        
+      - name: Notify Slack if failed
+        if: steps.install-certificates.outcome == 'failure'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Failed to renew certificate for Test!"
+          slack-optional-icon_emoji: ":siren-light:"
+          slack-optional-username: "Platform Ops Automation"
+
+      - name: Notify Slack if success
+        if: steps.install-certificates.outcome == 'success'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Successfully rotated expired certificates!"
+          slack-optional-icon_emoji: ":ring_buoy:"
+          slack-optional-username: "Platform Ops Automation"
+
   renew-expired-production-certificate:
     name: Renew Expired Certificates on Production
     runs-on: ubuntu-latest
@@ -178,9 +227,21 @@ jobs:
 
       - name: Renew Certificates
         id: renew-certificates
+        continue-on-error: true
         run: python renew_zerossl_certificate.py
 
+      - name: Notify Slack if failed
+        if: steps.renew-certificates.outcome == 'failure'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Failed to renew certificate for Production!"
+          slack-optional-icon_emoji: ":siren-light:"
+          slack-optional-username: "Platform Ops Automation"
+
       - uses: aws-actions/configure-aws-credentials@v3
+        if: steps.renew-certificates.outcome == 'success'
         name: Config AWS credential for legacy-production
         with:
           role-to-assume: ${{ env.LEGACY_PRODUCTION_ROLE_ARN }}
@@ -188,5 +249,27 @@ jobs:
           role-duration-seconds: 21600 # 6 hours
 
       - name: Install Certificates
+        if: steps.renew-certificates.outcome == 'success'
         id: install-certificates
+        continue-on-error: true
         run: python install_certificate.py
+
+      - name: Notify Slack if failed
+        if: steps.install-certificates.outcome == 'failure'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Failed to renew certificate for Production!"
+          slack-optional-icon_emoji: ":siren-light:"
+          slack-optional-username: "Platform Ops Automation"
+
+      - name: Notify Slack if success
+        if: steps.install-certificates.outcome == 'success'
+        uses: archive/github-actions-slack@v2.0.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-text: "Successfully rotated expired certificates!"
+          slack-optional-icon_emoji: ":ring_buoy:"
+          slack-optional-username: "Platform Ops Automation"

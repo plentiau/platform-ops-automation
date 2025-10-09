@@ -17,7 +17,6 @@ from cryptography.hazmat.primitives import serialization
 from botocore.exceptions import ClientError
 
 from get_zerossl_certificate import get_certificate_detail
-from send_alert import send_simple_alert
 
 # Setup logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -386,14 +385,10 @@ def main():
 
     environment = os.getenv("ENVIRONMENT")
     if not environment:
-        # Notify Slack
-        send_simple_alert("Failed to request certificate!")
         raise RuntimeError("ENVIRONMENT environment variable is not set")
 
     zerossl_email = os.getenv("ZEROSSL_EMAIL")
     if not zerossl_email:
-        # Notify Slack
-        send_simple_alert("Failed to request certificate!")
         raise RuntimeError("ZEROSSL_EMAIL environment variable is not set")
     
     if environment == "Test":
@@ -403,13 +398,9 @@ def main():
         expired_env_file = prod_file
         issued_env_folder = issued_certificate_production_folder
     else:
-        # Notify Slack
-        send_simple_alert("Failed to request certificate!")
         raise RuntimeError("Undefined value for ENVIRONMENT environment variable: %s", environment)
 
     if expired_env_file.exists():
-        # Notify Slack
-        send_simple_alert("Renewing expired certificates")
         logger.info("%s certificate file found: %s", environment, expired_env_file)
         with expired_env_file.open("r") as f:
             for line in f:
@@ -427,10 +418,6 @@ def main():
                 # Check if request to create a new certificate is success
                 if not json_response:
                     logger.error("❌ Failed to request certificate or status is not draft!")
-
-                    # Notify Slack
-                    send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
-
                     return 1  # exit immediately with error
                 else:
                     logger.info("Successfully requested draft certificate!")
@@ -441,10 +428,6 @@ def main():
                     # Check if domain validation is success with Route53
                     if not update_result:
                         logging.error("❌ Failed to update Route53 record!")
-
-                        # Notify Slack
-                        send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
-
                         return 1  # exit immediately with error
                     else:
                         logger.info("Successfully updated Route53 record for domain validation!")
@@ -457,10 +440,6 @@ def main():
                         # Check if domain verify is success
                         if not verify_result:
                             logging.error("❌ Failed to verify domain!")
-
-                            # Notify Slack
-                            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
-
                             return 1  # exit immediately with error
                         else:
                             logger.info("✅ Successfully verified domain!")

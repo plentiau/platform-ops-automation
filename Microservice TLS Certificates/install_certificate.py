@@ -8,9 +8,6 @@ import time
 from botocore.exceptions import ClientError
 from pathlib import Path
 
-from send_alert import send_simple_alert
-
-
 # Setup logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 numeric_level = getattr(logging, LOG_LEVEL, logging.INFO)
@@ -149,14 +146,10 @@ def main():
 
     environment = os.getenv("ENVIRONMENT")
     if not environment:
-        # Notify Slack
-        send_simple_alert("Failed to request certificate!")
         raise RuntimeError("ENVIRONMENT environment variable is not set")
 
     zerossl_email = os.getenv("ZEROSSL_EMAIL")
     if not zerossl_email:
-        # Notify Slack
-        send_simple_alert("Failed to request certificate!")
         raise RuntimeError("ZEROSSL_EMAIL environment variable is not set")
     
     if environment == "Test":
@@ -164,8 +157,6 @@ def main():
     elif environment == "Production":
         issued_env_folder = issued_certificate_production_folder
     else:
-        # Notify Slack
-        send_simple_alert("Failed to request certificate!")
         raise RuntimeError(f"Undefined value for ENVIRONMENT: {environment}")
 
     for certificate_domain_folder in issued_env_folder.iterdir():
@@ -179,29 +170,21 @@ def main():
         # Check if id file exists and ID is valid
         if not id_file.exists():
             logger.error("❌ Missing id file for %s", certificate_domain)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
         with id_file.open("r") as f:
             certificate_id = f.readline().strip()
         if not certificate_id:
             logger.error("❌ Invalid certificate ID for %s", certificate_domain)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
 
         # Check if private key file exists and private key is valid
         if not private_key_file.exists():
             logger.error("❌ Missing private key for %s", certificate_domain)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
         with private_key_file.open("r") as f:
             private_key = f.read().strip()
         if not private_key:
             logger.error("❌ Invalid private key for %s", certificate_domain)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
 
         logger.info("------------------------------")
@@ -214,8 +197,6 @@ def main():
         # Check if certificate download success 
         if not download_result:
             logger.error("❌ Failed to download certificate for %s", certificate_domain)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
         else:
             logger.info("Successfully downloaded certificate!")
@@ -225,8 +206,6 @@ def main():
 
         if not certificate_crt or not ca_bundle_crt:
             logger.error("❌ Missing certificate.crt or ca_bundle.crt for %s", certificate_domain)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
 
         # Update certificate info to Secrets Manager
@@ -240,8 +219,6 @@ def main():
         # Check if Secrets Manager update success
         if not update_result:
             logger.warning("❌ Failed to update Secrets Manager")
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
         else:
             logger.info("✅ Successfully updated Secrets Manager!")
@@ -270,8 +247,6 @@ def main():
         asg_name = env_mapping.get(service_name)
         if not asg_name:
             logger.error("No ASG mapping found for service: %s in environment %s", service_name, environment)
-            # Notify Slack
-            send_simple_alert(f"Failed to request certificate for {certificate_domain}!")
             return 1
         asg_groups.setdefault(asg_name, []).append(service_name)
 
@@ -290,13 +265,9 @@ def main():
             logger.info("✅ Successfully refreshed ASG!")
     
     if not failed_instance_refresh_asg:
-        # Notify Slack
-        send_simple_alert("Successfully rotated expired certificates!")
         return 0
     else:
         failed_asg_string = ",".join(failed_instance_refresh_asg)
-        # Notify Slack
-        send_simple_alert(f"Failed to perform instance refresh for ASGs: {failed_asg_string}! Please do it manually!")
         return 1
 
 

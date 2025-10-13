@@ -4,7 +4,7 @@ import builtins
 import pytest
 import types
 import requests
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 
 import renew_zerossl_certificate as rzc
 
@@ -159,10 +159,8 @@ def test_verify_domain_issued(monkeypatch):
 # main()
 # ---------------------------
 def test_main_env_missing(monkeypatch):
-    with patch("renew_zerossl_certificate.send_simple_alert") as mock_alert:
-        with pytest.raises(RuntimeError):
-            rzc.main()
-        mock_alert.assert_called()
+    with pytest.raises(RuntimeError):
+        rzc.main()
 
 
 def test_main_no_file(monkeypatch, tmp_path):

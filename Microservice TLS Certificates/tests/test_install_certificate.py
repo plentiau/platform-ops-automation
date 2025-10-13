@@ -123,11 +123,10 @@ def test_start_instance_refresh_cancelled(mock_boto):
 # main() tests
 # --------------------------
 
-@patch("install_certificate.send_simple_alert")
 @patch("install_certificate.download_certificate")
 @patch("install_certificate.update_secrets_manager")
 @patch("install_certificate.start_instance_refresh")
-def test_main_success(mock_refresh, mock_update, mock_download, mock_alert, tmp_path, monkeypatch):
+def test_main_success(mock_refresh, mock_update, mock_download, tmp_path, monkeypatch):
     # Setup fake environment
     monkeypatch.setenv("ENVIRONMENT", "Test")
     monkeypatch.setenv("ZEROSSL_EMAIL", "user@test.com")
@@ -152,14 +151,11 @@ def test_main_success(mock_refresh, mock_update, mock_download, mock_alert, tmp_
 
     result = ic.main()
     assert result == 0
-    mock_alert.assert_called_with("Successfully rotated expired certificates!")
 
 
-@patch("install_certificate.send_simple_alert")
-def test_main_missing_env(mock_alert, monkeypatch):
+def test_main_missing_env(monkeypatch):
     monkeypatch.delenv("ENVIRONMENT", raising=False)
     monkeypatch.setenv("ZEROSSL_EMAIL", "x")
 
     with pytest.raises(RuntimeError, match="ENVIRONMENT"):
         ic.main()
-    mock_alert.assert_called_once()

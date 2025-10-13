@@ -189,6 +189,5 @@ def main():
         logger.info("No alerts to send.")
 
 
-
 if __name__ == "__main__":
     main()

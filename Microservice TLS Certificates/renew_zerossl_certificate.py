@@ -133,6 +133,7 @@ def request_certificate(certificate_domain: str, certificate_csr: str, retries: 
             else:
                 logger.error("All retries failed for certificate request for %s", certificate_domain)
                 return None
+    return None
     
 
 def update_route53(env_name: str, json_response: dict):
@@ -398,7 +399,7 @@ def main():
         expired_env_file = prod_file
         issued_env_folder = issued_certificate_production_folder
     else:
-        raise RuntimeError("Undefined value for ENVIRONMENT environment variable: %s", environment)
+        raise RuntimeError(f"Undefined value for ENVIRONMENT environment variable: {environment}")
 
     if expired_env_file.exists():
         logger.info("%s certificate file found: %s", environment, expired_env_file)
@@ -427,7 +428,7 @@ def main():
                     update_result = update_route53(environment, json_response)
                     # Check if domain validation is success with Route53
                     if not update_result:
-                        logging.error("❌ Failed to update Route53 record!")
+                        logger.error("❌ Failed to update Route53 record!")
                         return 1  # exit immediately with error
                     else:
                         logger.info("Successfully updated Route53 record for domain validation!")
@@ -439,7 +440,7 @@ def main():
                         verify_result = verify_domain(certificate_id)
                         # Check if domain verify is success
                         if not verify_result:
-                            logging.error("❌ Failed to verify domain!")
+                            logger.error("❌ Failed to verify domain!")
                             return 1  # exit immediately with error
                         else:
                             logger.info("✅ Successfully verified domain!")
@@ -449,7 +450,7 @@ def main():
                             clean_result = clean_route53(environment, certificate_id)
                             # Check if records cleaning is success
                             if not clean_result:
-                                logging.warning("❌ Failed to clean old CNAME records!")
+                                logger.warning("❌ Failed to clean old CNAME records!")
 
                             logger.info("Exporting certificate ID and private key...")
                             parent_folder = f"{issued_env_folder}/{certificate_domain}"

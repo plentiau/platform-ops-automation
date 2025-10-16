@@ -191,6 +191,10 @@ jobs:
           slack-optional-icon_emoji: ":ring_buoy:"
           slack-optional-username: "Platform Ops Automation"
 
+      - name: Clean up
+        if: always()
+        run: rm -rf expired_certificates issued_certificates
+
   renew-expired-production-certificate:
     name: Renew Expired Certificates on Production
     runs-on: ubuntu-latest
@@ -273,3 +277,7 @@ jobs:
           slack-text: "Successfully rotated expired certificates!"
           slack-optional-icon_emoji: ":ring_buoy:"
           slack-optional-username: "Platform Ops Automation"
+
+      - name: Clean up
+        if: always()
+        run: rm -rf expired_certificates issued_certificates

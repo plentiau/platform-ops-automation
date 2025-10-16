@@ -456,10 +456,10 @@ def main():
                             parent_folder = f"{issued_env_folder}/{certificate_domain}"
                             os.makedirs(parent_folder, exist_ok=True)
                             # Write ID
-                            with open(os.path.join(parent_folder, "id"), "a") as f:
+                            with open(os.path.join(parent_folder, "id"), "w") as f:
                                 f.write(f"{certificate_id}\n")
                             # Write private key
-                            with open(os.path.join(parent_folder, "private.key"), "a") as f:
+                            with open(os.path.join(parent_folder, "private.key"), "w") as f:
                                 f.write(f"{private_key}\n")
     else:
         logger.info("No certificate file found for %s environment.", environment)

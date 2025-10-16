@@ -267,7 +267,6 @@ def main():
     if not failed_instance_refresh_asg:
         return 0
     else:
-        failed_asg_string = ",".join(failed_instance_refresh_asg)
         return 1
 
 

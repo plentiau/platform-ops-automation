@@ -1,0 +1,26 @@
+{
+    "Test": {
+        "creditcheckservice": "uat-linux-host-pool-epsilon",
+        "documentgenerationservice": "uat-linux-host-pool-bravo",
+        "financequoteservice": "uat-linux-host-pool-bravo",
+        "investorservice": "uat-linux-host-pool-alpha",
+        "partnerservice": "uat-linux-host-pool-bravo",
+        "paymentdelinquencyservice": "uat-linux-host-pool-delta",
+        "quoteservice": "uat-linux-host-pool-bravo",
+        "sourceverificationengineservice": "uat-linux-host-pool-charlie",
+        "workflowservice": "uat-linux-host-pool-charlie"
+    },
+    "Production": {
+        "applicationservice": "ApplicationService-AutoscalingGroup",
+        "creditcheckservice": "CreditCheckService-ASG4JOO0-AQ4XZIXN80BM",
+        "documentgenerationservice": "DocumentGenerationService-AutoscalingGroup",
+        "documentstorageservice": "DocumentStorageService-AutoscalingGroup",
+        "financequoteservice": "FinanceQuoteService-AutoscalingGroup",
+        "investorservice": "InvestorService-AutoscalingGroup",
+        "partnerservice": "PartnerService-AutoscalingGroup",
+        "paymentdelinquencyservice": "PaymentDelinquencyService-AutoscalingGroup",
+        "quoteservice": "QuoteService-ASG4JOO0-SV4NFUNRKD3W",
+        "sourceverificationengineservice": "SourceVerificationEngineService-AutoscalingGroup",
+        "workflowservice": "WorkflowService-ASG4JOO0-1B4X4E2U0Y5DW"
+    }
+}

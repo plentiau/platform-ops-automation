@@ -75,13 +75,17 @@ jobs:
 
       - name: Notify Slack if failed
         if: steps.check-certificates.outcome == 'failure'
-        uses: archive/github-actions-slack@v2.0.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Failed to check certificates!"
-          slack-optional-icon_emoji: ":siren-light:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
       - uses: aws-actions/configure-aws-credentials@v3
         name: Config AWS credential
@@ -148,14 +152,18 @@ jobs:
         run: python renew_zerossl_certificate.py
 
       - name: Notify Slack if failed
-        if: steps.renew-certificates.outcome == 'failure'
-        uses: archive/github-actions-slack@v2.0.0
+        if: steps.check-certificates.outcome == 'failure'
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Failed to renew certificate for Test!"
-          slack-optional-icon_emoji: ":siren-light:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
       - uses: aws-actions/configure-aws-credentials@v3
         if: steps.renew-certificates.outcome == 'success'
@@ -172,24 +180,32 @@ jobs:
         run: python install_certificate.py
 
       - name: Notify Slack if failed
-        if: steps.install-certificates.outcome == 'failure'
-        uses: archive/github-actions-slack@v2.0.0
+        if: steps.check-certificates.outcome == 'failure'
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Failed to renew certificate for Test!"
-          slack-optional-icon_emoji: ":siren-light:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
-      - name: Notify Slack if success
-        if: steps.install-certificates.outcome == 'success'
-        uses: archive/github-actions-slack@v2.0.0
+      - name: Notify Slack if failed
+        if: steps.check-certificates.outcome == 'failure'
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Successfully rotated expired certificates!"
-          slack-optional-icon_emoji: ":ring_buoy:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
       - name: Clean up
         if: always()
@@ -235,14 +251,18 @@ jobs:
         run: python renew_zerossl_certificate.py
 
       - name: Notify Slack if failed
-        if: steps.renew-certificates.outcome == 'failure'
-        uses: archive/github-actions-slack@v2.0.0
+        if: steps.check-certificates.outcome == 'failure'
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Failed to renew certificate for Production!"
-          slack-optional-icon_emoji: ":siren-light:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
       - uses: aws-actions/configure-aws-credentials@v3
         if: steps.renew-certificates.outcome == 'success'
@@ -259,24 +279,32 @@ jobs:
         run: python install_certificate.py
 
       - name: Notify Slack if failed
-        if: steps.install-certificates.outcome == 'failure'
-        uses: archive/github-actions-slack@v2.0.0
+        if: steps.check-certificates.outcome == 'failure'
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Failed to renew certificate for Production!"
-          slack-optional-icon_emoji: ":siren-light:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
-      - name: Notify Slack if success
-        if: steps.install-certificates.outcome == 'success'
-        uses: archive/github-actions-slack@v2.0.0
+      - name: Notify Slack if failed
+        if: steps.check-certificates.outcome == 'failure'
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_BOT_USER_OAUTH_ACCESS_TOKEN }}
-          slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-text: "Successfully rotated expired certificates!"
-          slack-optional-icon_emoji: ":ring_buoy:"
-          slack-optional-username: "Platform Ops Automation"
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Failed to check certificates!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
 
       - name: Clean up
         if: always()

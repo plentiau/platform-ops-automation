@@ -193,6 +193,20 @@ jobs:
                   type: "mrkdwn"
                   text: "Please go to the link for more detail!"
 
+      - name: Notify Slack if success
+        if: steps.install-certificates.outcome == 'success'
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Successfully renewed certificates for Test!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
+
       - name: Clean up
         if: always()
         run: rm -rf expired_certificates issued_certificates
@@ -272,6 +286,20 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             text: "<${{ env.BUILD_URL }}|Failed to install certificates for Production!>"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "Please go to the link for more detail!"
+
+      - name: Notify Slack if success
+        if: steps.install-certificates.outcome == 'success'
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "<${{ env.BUILD_URL }}|Successfully renewed certificates for Production!>"
             blocks:
               - type: "section"
                 text:
